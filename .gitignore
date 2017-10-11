@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+package.json
+yarn.lock
+**/node_modules/
+*.csproj.user
+.vs
+.vscode
