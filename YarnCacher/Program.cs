@@ -16,7 +16,7 @@ namespace YarnCacher
         {
             if (Options.Length < 3 || (Options.Length > 0 && Options[0] == "-h"))
             {
-                Console.WriteLine("Usage: YarnCacher.exe <path-to-package.json> <azure-storage-key> <azure-block-blob> <OPTIONAL: yarn-path>");
+                Console.WriteLine("Usage: YarnCacher.exe <path-to-package.json> <azure-storage-key> <azure-blob-container> <OPTIONAL: yarn-path>");
                 return;
             }
 
