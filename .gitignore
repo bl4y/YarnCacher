@@ -4,5 +4,6 @@ package.json
 yarn.lock
 **/node_modules/
 *.csproj.user
-.vs
-.vscode
+.vs/
+.vscode/
+*/Properties/

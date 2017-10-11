@@ -43,7 +43,6 @@ namespace YarnCacher
             catch
             {
                 Console.WriteLine("Invalid Yarn cache directory. Make sure Yarn is added to PATH or specify Yarn path in arguments. More info: YarnCacher.exe -h");
-                Console.ReadKey();
                 return;
             }
 
@@ -82,7 +81,6 @@ namespace YarnCacher
             {
                 Console.WriteLine(" > Failed to access Azure. Exception message:");
                 Console.WriteLine(e.Message);
-                Console.ReadKey();
                 return;
             }
 
@@ -142,8 +140,6 @@ namespace YarnCacher
             }
 
             Console.WriteLine(" > Finished.");
-
-            Console.ReadLine();
         }
     }
 }
