@@ -17,11 +17,11 @@ namespace YarnCacher
         {
             if (Options.Length < 3 || (Options.Length > 0 && Options[0] == "-h"))
             {
-                Console.WriteLine("Usage: YarnCacher.exe <path-to-package.json> <azure-storage-key> <azure-blob-container> <OPTIONAL: yarn-path>");
+                Console.WriteLine("Usage: YarnCacher.exe <absolute-path-to-package.json> <azure-storage-access-key> <azure-blob-container-name> <OPTIONAL: absolute-path-to-yarn>");
                 return;
             }
 
-            Console.WriteLine(" *** YarnCacher for Azure by bl4y *** ");
+            Console.WriteLine(" *** YarnCacher for Azure @ https://github.com/bl4y/YarnCacher *** ");
 
             Console.WriteLine("Fetching Yarn cache directory...");
 
@@ -43,7 +43,7 @@ namespace YarnCacher
             }
             catch
             {
-                Console.WriteLine("Invalid Yarn cache directory. Make sure Yarn is added to PATH or specify Yarn path in arguments. More info: YarnCacher.exe -h");
+                Console.WriteLine(" > Invalid Yarn cache directory. Make sure Yarn is added to PATH or specify Yarn path in arguments. More info: YarnCacher.exe -h");
                 return;
             }
 
@@ -53,6 +53,12 @@ namespace YarnCacher
 
             string PackagePath = Options[0];
             string PackageHash = string.Empty;
+
+            if (!File.Exists(PackagePath))
+            {
+                Console.WriteLine(" > Invalid package.json path. Please specify full absolute path, including package.json .");
+                return;
+            }
 
             using (MD5 MD5Instance = MD5.Create())
             {
@@ -64,7 +70,7 @@ namespace YarnCacher
 
             Console.WriteLine(" > Hash: " + PackageHash);
 
-            string CacheArchiveFileName = "yarn-pre-cache-" + PackageHash + ".zip";
+            string CacheArchivePath = Path.Combine(Path.GetDirectoryName(PackagePath), "yarn-pre-cache-" + PackageHash + ".zip");
 
             Console.WriteLine("Accessing Azure...");
 
@@ -76,7 +82,7 @@ namespace YarnCacher
             {
                 AzureBlobClient = CloudStorageAccount.Parse(Options[1]).CreateCloudBlobClient();
                 AzureBlobContainer = AzureBlobClient.GetContainerReference(Options[2]);
-                AzureBlockBlob = AzureBlobContainer.GetBlockBlobReference(CacheArchiveFileName);
+                AzureBlockBlob = AzureBlobContainer.GetBlockBlobReference(Path.GetFileName(CacheArchivePath));
             }
             catch (Exception e)
             {
@@ -93,7 +99,7 @@ namespace YarnCacher
             {
                 Console.WriteLine("Downloading pre-cached archive from Azure...");
 
-                await AzureBlockBlob.DownloadToFileAsync(CacheArchiveFileName, FileMode.CreateNew);
+                await AzureBlockBlob.DownloadToFileAsync(CacheArchivePath, FileMode.CreateNew);
 
                 Console.WriteLine("Cleaning up...");
 
@@ -107,9 +113,9 @@ namespace YarnCacher
 
                 Console.WriteLine("Uncompressing pre-cached archive...");
 
-                ZipFile.ExtractToDirectory(CacheArchiveFileName, YarnCachePath);
+                ZipFile.ExtractToDirectory(CacheArchivePath, YarnCachePath);
 
-                File.Delete(CacheArchiveFileName);
+                File.Delete(CacheArchivePath);
             }
 
             Console.WriteLine("Installing and building Yarn packages...");
@@ -120,6 +126,7 @@ namespace YarnCacher
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
+                WorkingDirectory = Path.GetDirectoryName(PackagePath)
             });
 
             YarnInstallProcess.WaitForExit();
@@ -131,15 +138,15 @@ namespace YarnCacher
             {
                 Console.WriteLine("Compressing Yarn cache...");
 
-                ZipFile.CreateFromDirectory(YarnCachePath, CacheArchiveFileName);
+                ZipFile.CreateFromDirectory(YarnCachePath, CacheArchivePath);
 
                 Console.WriteLine("Uploading pre-cached archive to Azure...");
 
-                await AzureBlockBlob.UploadFromFileAsync(CacheArchiveFileName);
+                await AzureBlockBlob.UploadFromFileAsync(CacheArchivePath);
 
                 Console.WriteLine("Cleaning up...");
 
-                File.Delete(CacheArchiveFileName);
+                File.Delete(CacheArchivePath);
             }
 
             Console.WriteLine(" > Finished.");
