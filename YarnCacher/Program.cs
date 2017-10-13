@@ -4,15 +4,16 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace YarnCacher
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] Options)
+        public static async Task Main(string[] Options)
         {
             if (Options.Length < 3 || (Options.Length > 0 && Options[0] == "-h"))
             {
@@ -86,11 +87,13 @@ namespace YarnCacher
 
             Console.WriteLine(" > Connected to Azure.");
 
-            if (AzureBlockBlob.ExistsAsync().GetAwaiter().GetResult())
+            bool AzureBlockBlobExists = await AzureBlockBlob.ExistsAsync();
+
+            if (AzureBlockBlobExists)
             {
                 Console.WriteLine("Downloading pre-cached archive from Azure...");
 
-                AzureBlockBlob.DownloadToFileAsync(CacheArchiveFileName, FileMode.CreateNew).GetAwaiter().GetResult();
+                await AzureBlockBlob.DownloadToFileAsync(CacheArchiveFileName, FileMode.CreateNew);
 
                 Console.WriteLine("Cleaning up...");
 
@@ -124,7 +127,7 @@ namespace YarnCacher
             Console.WriteLine(" > Process output:");
             Console.WriteLine(YarnInstallProcess.StandardOutput.ReadToEnd().TrimEnd('\r', '\n'));
 
-            if (!AzureBlockBlob.ExistsAsync().GetAwaiter().GetResult())
+            if (!AzureBlockBlobExists)
             {
                 Console.WriteLine("Compressing Yarn cache...");
 
@@ -132,7 +135,7 @@ namespace YarnCacher
 
                 Console.WriteLine("Uploading pre-cached archive to Azure...");
 
-                AzureBlockBlob.UploadFromFileAsync(CacheArchiveFileName).GetAwaiter().GetResult();
+                await AzureBlockBlob.UploadFromFileAsync(CacheArchiveFileName);
 
                 Console.WriteLine("Cleaning up...");
 
